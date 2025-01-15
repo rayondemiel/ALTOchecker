@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTRVX ALTO XML Validator (CLI Mode)</title>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .console {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .console-line {
+            display: block;
+            margin: 2px 0;
+        }
+        .success-line {
+            color: #28a745;
+        }
+        .success-line::before {
+            content: "✓ ";
+            color: #28a745;
+        }
+        .error-line {
+            color: #dc3545;
+        }
+        .error-line::before {
+            content: "✕ ";
+            color: #dc3545;
+        }
+        .info-line {
+            color: #0056b3;
+        }
+        .info-line::before {
+            content: "ℹ ";
+            color: #0056b3;
+        }
+        .file-ref {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .loader {
+            display: none;
+            margin: 20px 0;
+        }
+        .loader.active {
+            display: block;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #bdbdbd;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTRVX ALTO XML Validator</h1>
+    <p>Upload a ZIP file containing ALTO XML files to validate:</p>
+    
+    <input type="file" id="zipFile" accept=".zip" />
+    <button id="validateBtn">Validate</button>
+    
+    <div class="loader" id="loader">
+        Loading Pyodide and installing HTRVX... Please wait.
+    </div>
+    
+    <div id="status"></div>
+    <div id="console" class="console"></div>
+
+    <script>
+        function appendToConsole(text, type = '') {
+            const console = document.getElementById('console');
+            const line = document.createElement('span');
+            
+            // Parse ANSI codes and replace them with HTML elements
+            const ansiRegex = /\[(\d+)m/g;
+            let match;
+            let lastIndex = 0;
+            let result = '';
+
+            while ((match = ansiRegex.exec(text)) !== null) {
+                const code = match[1];
+                const before = text.substring(lastIndex, match.index);
+                result += before;
+
+                switch (code) {
+                    case '31': // Red text (error)
+                        result += '<span class="error-line">';
+                        break;
+                    case '32': // Green text (success)
+                        result += '<span class="success-line">';
+                        break;
+                    case '34': // Blue text (info)
+                        result += '<span class="info-line">';
+                        break;
+                    case '0': // Reset
+                        result += '</span>';
+                        break;
+                    default:
+                        // Handle other codes if needed
+                        break;
+                }
+
+                lastIndex = ansiRegex.lastIndex;
+            }
+
+            result += text.substring(lastIndex);
+            line.innerHTML = result;
+            line.className = `console-line ${type}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function loadPyodideScript() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Failed to load Pyodide script'));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function main() {
+            const validateBtn = document.getElementById('validateBtn');
+            const loader = document.getElementById('loader');
+            const status = document.getElementById('status');
+            const console = document.getElementById('console');
+            
+            validateBtn.disabled = true;
+            loader.classList.add('active');
+            
+            try {
+                await loadPyodideScript();
+                appendToConsole('Pyodide script loaded successfully', 'success-line');
+
+                const pyodide = await loadPyodide({
+                    stdout: (text) => appendToConsole(text)
+                });
+                appendToConsole('Pyodide initialized', 'success-line');
+                
+                // Install required packages
+                await pyodide.loadPackage(['micropip']);
+                appendToConsole('Installing dependencies...', 'info-line');
+                
+                await pyodide.runPythonAsync(`
+                    import micropip
+                    print("Installing pip and wheel...") 
+                    await micropip.install('pip')
+                    await micropip.install('wheel')
+                    print("Installing lxml...")
+                    await micropip.install('lxml')
+                    print("Installing htrvx...")
+                    await micropip.install('htrvx')
+                `);
+                
+                appendToConsole('HTRVX and dependencies installed', 'success-line');
+                validateBtn.disabled = false;
+                loader.classList.remove('active');
+                
+                validateBtn.addEventListener('click', async () => {
+                    const fileInput = document.getElementById('zipFile');
+                    
+                    if (!fileInput.files.length) {
+                        appendToConsole('Please upload a ZIP file.', 'error-line');
+                        return;
+                    }
+                    
+                    validateBtn.disabled = true;
+                    console.textContent = ''; // Clear previous output
+                    appendToConsole('Validating files...', 'info-line');
+                    
+                    try {
+                        const file = fileInput.files[0];
+                        const arrayBuffer = await file.arrayBuffer();
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        
+                        // Clean up old files
+                        try {
+                            pyodide.FS.unlink('uploaded.zip');
+                            pyodide.FS.rmdir('extracted', { recursive: true });
+                        } catch (e) {}
+
+                        pyodide.FS.mkdir('extracted');
+                        pyodide.FS.writeFile('uploaded.zip', uint8Array);
+                        
+                        const result = await pyodide.runPythonAsync(`
+                            import zipfile
+                            import os
+                            from htrvx.testing import test
+                            
+                            with zipfile.ZipFile("uploaded.zip", "r") as zip_ref:
+                                zip_ref.extractall("extracted")
+                            
+                            xml_files = [
+                                os.path.join(root, fname)
+                                for root, _, files in os.walk("extracted")
+                                for fname in files if fname.endswith('.xml') and fname.lower() != "mets.xml"
+                            ]
+                            
+                            if not xml_files:
+                                print("✕ No XML files found in ZIP", flush=True)
+                                files_processed = 0
+                            else:
+                                success, messages = test(
+                                    xml_files,
+                                    verbose="zen",
+                                    group=True,
+                                    format="alto",
+                                    segmonto=True,
+                                    check_empty=True,
+                                    raise_empty=True,
+                                    xsd=True,
+                                    verbose_level="all",
+                                    check_image=False
+                                )
+                                files_processed = len(xml_files)
+                            
+                            files_processed
+                        `);
+                        
+                        appendToConsole(`Validation complete: Processed ${result} files`, 'success-line');
+                    } catch (error) {
+                        appendToConsole(`Error during validation: ${error.message}`, 'error-line');
+                    } finally {
+                        validateBtn.disabled = false;
+                    }
+                });
+                
+            } catch (error) {
+                appendToConsole(`Failed to initialize: ${error.message}`, 'error-line');
+                loader.classList.remove('active');
+            }
+        }
+        
+        main();
+    </script>
+</body>
+</html>
