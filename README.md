@@ -1,6 +1,8 @@
 # ALTOchecker
 
-Cette page web permet de vérifier la conformité des fichiers XML (à partir d'un fichier ZIP) en utilisant l'outil HTRVX. L'outil HTRVX, développé par HTR-United, est intégré dans cette application afin d'automatiser la vérification et garantir que les fichiers XML respectent les standards requis :
+Cette page web permet de vérifier la conformité des fichiers XML (à partir d'un fichier ZIP) en utilisant l'outil HTRVX. L'outil HTRVX, développé par HTR-United, est intégré dans cette application afin d'automatiser la vérification et garantir que les fichiers XML respectent les standards requis.
+
+https://rayondemiel.github.io/ALTOchecker/
 
 ## Vérifications
 
