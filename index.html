@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HTRVX ALTO XML Validator (CLI Mode)</title>
+    <title>HTRVX ALTO XML Validator</title>
     <style>
         body {
             max-width: 800px;
@@ -22,6 +22,8 @@
             margin: 20px 0;
             overflow-x: auto;
             white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
         }
         .console-line {
             display: block;
@@ -48,29 +50,52 @@
             content: "ℹ ";
             color: #0056b3;
         }
-        .file-ref {
-            color: #6c757d;
-            font-style: italic;
-        }
-        .loader {
-            display: none;
+        .summary-panel {
+            background-color: #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
             margin: 20px 0;
         }
-        .loader.active {
-            display: block;
+        .summary-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
-        .status {
-            margin: 10px 0;
+        .summary-stats {
+            display: flex;
+            gap: 20px;
+        }
+        .stat-item {
+            background: white;
             padding: 10px;
             border-radius: 4px;
+            flex: 1;
         }
-        .error {
-            background-color: #ffebee;
-            color: #c62828;
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
         }
-        .success {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner.active {
+            display: block;
         }
         button {
             padding: 8px 16px;
@@ -88,25 +113,51 @@
 </head>
 <body>
     <h1>HTRVX ALTO XML Validator</h1>
+    
+    <div class="summary-panel">
+        <div class="summary-title">Validation Summary</div>
+        <div class="summary-stats">
+            <div class="stat-item">
+                <div class="stat-label">Total Files</div>
+                <div class="stat-value" id="totalFiles">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Valid Files</div>
+                <div class="stat-value" id="validFiles">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Files with Errors</div>
+                <div class="stat-value" id="errorFiles">-</div>
+            </div>
+        </div>
+    </div>
+
     <p>Upload a ZIP file containing ALTO XML files to validate:</p>
     
     <input type="file" id="zipFile" accept=".zip" />
     <button id="validateBtn">Validate</button>
     
-    <div class="loader" id="loader">
-        Loading Pyodide and installing HTRVX... Please wait.
-    </div>
-    
+    <div class="spinner" id="spinner"></div>
     <div id="status"></div>
     <div id="console" class="console"></div>
 
     <script>
+        let validFileCount = 0;
+        let totalFileCount = 0;
+        let errorFileCount = 0;
+
+        function updateSummary() {
+            document.getElementById('totalFiles').textContent = totalFileCount;
+            document.getElementById('validFiles').textContent = validFileCount;
+            document.getElementById('errorFiles').textContent = errorFileCount;
+        }
+
         function appendToConsole(text, type = '') {
             const console = document.getElementById('console');
             const line = document.createElement('span');
-            
+
             // Parse ANSI codes and replace them with HTML elements
-            const ansiRegex = /\[(\d+)m/g;
+            const ansiRegex = /\[(\d+)m/g;
             let match;
             let lastIndex = 0;
             let result = '';
@@ -129,9 +180,6 @@
                     case '0': // Reset
                         result += '</span>';
                         break;
-                    default:
-                        // Handle other codes if needed
-                        break;
                 }
 
                 lastIndex = ansiRegex.lastIndex;
@@ -144,7 +192,28 @@
             console.scrollTop = console.scrollHeight;
         }
 
-        function loadPyodideScript() {
+        function getResult() {
+            const consoleLines = document.querySelectorAll(".console-line");
+            const lastLine = consoleLines[consoleLines.length - 1];
+
+            if (lastLine) {
+                const text = lastLine.textContent;
+                const match = text.match(/^(\d+)\/(\d+) valid XML files$/);
+
+                console.log("hello c'est moi 2")
+
+                if (match) {
+                    console.log("hello c'est moi 2")
+                validFileCount = parseInt(match[1], 10);
+                totalFileCount = parseInt(match[2], 10);
+                errorFileCount = totalFileCount - validFileCount;
+                updateSummary()
+            } else {
+                console.error("Impossible to get result about process analysis");
+        }
+    }}
+
+        async function loadPyodideScript() {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
@@ -156,12 +225,12 @@
 
         async function main() {
             const validateBtn = document.getElementById('validateBtn');
-            const loader = document.getElementById('loader');
+            const spinner = document.getElementById('spinner');
             const status = document.getElementById('status');
             const console = document.getElementById('console');
             
             validateBtn.disabled = true;
-            loader.classList.add('active');
+            spinner.classList.add('active');
             
             try {
                 await loadPyodideScript();
@@ -172,7 +241,6 @@
                 });
                 appendToConsole('Pyodide initialized', 'success-line');
                 
-                // Install required packages
                 await pyodide.loadPackage(['micropip']);
                 appendToConsole('Installing dependencies...', 'info-line');
                 
@@ -189,7 +257,7 @@
                 
                 appendToConsole('HTRVX and dependencies installed', 'success-line');
                 validateBtn.disabled = false;
-                loader.classList.remove('active');
+                spinner.classList.remove('active');
                 
                 validateBtn.addEventListener('click', async () => {
                     const fileInput = document.getElementById('zipFile');
@@ -199,8 +267,15 @@
                         return;
                     }
                     
+                    // Reset counters
+                    validFileCount = 0;
+                    errorFileCount = 0;
+                    totalFileCount = 0;
+                    updateSummary();
+                    
                     validateBtn.disabled = true;
-                    console.textContent = ''; // Clear previous output
+                    spinner.classList.add('active');
+                    console.textContent = '';
                     appendToConsole('Validating files...', 'info-line');
                     
                     try {
@@ -208,7 +283,6 @@
                         const arrayBuffer = await file.arrayBuffer();
                         const uint8Array = new Uint8Array(arrayBuffer);
                         
-                        // Clean up old files
                         try {
                             pyodide.FS.unlink('uploaded.zip');
                             pyodide.FS.rmdir('extracted', { recursive: true });
@@ -252,17 +326,20 @@
                             files_processed
                         `);
                         
+                        totalFileCount = result;
+                        getResult();
                         appendToConsole(`Validation complete: Processed ${result} files`, 'success-line');
                     } catch (error) {
                         appendToConsole(`Error during validation: ${error.message}`, 'error-line');
                     } finally {
                         validateBtn.disabled = false;
+                        spinner.classList.remove('active');
                     }
                 });
                 
             } catch (error) {
                 appendToConsole(`Failed to initialize: ${error.message}`, 'error-line');
-                loader.classList.remove('active');
+                spinner.classList.remove('active');
             }
         }
         
