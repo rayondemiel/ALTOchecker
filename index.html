@@ -4,142 +4,71 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HTRVX ALTO XML Validator</title>
-    <style>
-        body {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
-        .console {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 12px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            margin: 20px 0;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .console-line {
-            display: block;
-            margin: 2px 0;
-        }
-        .success-line {
-            color: #28a745;
-        }
-        .success-line::before {
-            content: "✓ ";
-            color: #28a745;
-        }
-        .error-line {
-            color: #dc3545;
-        }
-        .error-line::before {
-            content: "✕ ";
-            color: #dc3545;
-        }
-        .info-line {
-            color: #0056b3;
-        }
-        .info-line::before {
-            content: "ℹ ";
-            color: #0056b3;
-        }
-        .summary-panel {
-            background-color: #e9ecef;
-            border-radius: 4px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        .summary-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .summary-stats {
-            display: flex;
-            gap: 20px;
-        }
-        .stat-item {
-            background: white;
-            padding: 10px;
-            border-radius: 4px;
-            flex: 1;
-        }
-        .stat-label {
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-        .spinner {
-            display: none;
-            width: 40px;
-            height: 40px;
-            margin: 20px auto;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .spinner.active {
-            display: block;
-        }
-        button {
-            padding: 8px 16px;
-            background-color: #2196f3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:disabled {
-            background-color: #bdbdbd;
-            cursor: not-allowed;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>HTRVX ALTO XML Validator</h1>
-    
-    <div class="summary-panel">
-        <div class="summary-title">Validation Summary</div>
-        <div class="summary-stats">
-            <div class="stat-item">
-                <div class="stat-label">Total Files</div>
-                <div class="stat-value" id="totalFiles">-</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Valid Files</div>
-                <div class="stat-value" id="validFiles">-</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Files with Errors</div>
-                <div class="stat-value" id="errorFiles">-</div>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-8">HTRVX ALTO XML Validator</h1>
+        
+        <!-- Stats Panel -->
+        <div class="bg-gray-100 rounded-lg p-6 mb-8">
+            <div class="text-lg font-semibold mb-4">Validation Summary</div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-sm text-gray-600">Total Files</div>
+                    <div class="text-2xl font-bold mt-1" id="totalFiles">-</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-sm text-gray-600">Valid Files</div>
+                    <div class="text-2xl font-bold mt-1" id="validFiles">-</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <div class="text-sm text-gray-600">Files with Errors</div>
+                    <div class="text-2xl font-bold mt-1" id="errorFiles">-</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <p>Upload a ZIP file containing ALTO XML files to validate:</p>
-    
-    <input type="file" id="zipFile" accept=".zip" />
-    <button id="validateBtn">Validate</button>
-    
-    <div class="spinner" id="spinner"></div>
-    <div id="status"></div>
-    <div id="console" class="console"></div>
+        <!-- Upload Section -->
+        <div class="mb-6">
+            <p class="mb-4">Upload a ZIP file containing ALTO XML files to validate:</p>
+            <div class="flex gap-4">
+                <input
+                    type="file"
+                    id="zipFile"
+                    accept=".zip"
+                    class="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100"
+                />
+                <button
+                    id="validateBtn"
+                    disabled
+                    class="px-6 py-2 rounded-md font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                    Validate
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="spinner" class="hidden">
+            <div class="flex justify-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="status" class="my-4"></div>
+
+        <!-- Console Output -->
+        <div id="console" class="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-sm h-[500px] overflow-y-auto">
+            <div class="console-line info-line">System initialized and ready for validation...</div>
+        </div>
+    </div>
 
     <script>
         let validFileCount = 0;
@@ -154,9 +83,9 @@
 
         function appendToConsole(text, type = '') {
             const console = document.getElementById('console');
-            const line = document.createElement('span');
+            const line = document.createElement('div');
 
-            // Parse ANSI codes and replace them with HTML elements
+            // Parse ANSI codes and replace them with Tailwind classes
             const ansiRegex = /\[(\d+)m/g;
             let match;
             let lastIndex = 0;
@@ -169,13 +98,13 @@
 
                 switch (code) {
                     case '31': // Red text (error)
-                        result += '<span class="error-line">';
+                        result += '<span class="text-red-600 before:content-[\'✕\'] before:mr-2">';
                         break;
                     case '32': // Green text (success)
-                        result += '<span class="success-line">';
+                        result += '<span class="text-green-600 before:content-[\'✓\'] before:mr-2">';
                         break;
                     case '34': // Blue text (info)
-                        result += '<span class="info-line">';
+                        result += '<span class="text-blue-600 before:content-[\'ℹ\'] before:mr-2">';
                         break;
                     case '0': // Reset
                         result += '</span>';
@@ -187,31 +116,29 @@
 
             result += text.substring(lastIndex);
             line.innerHTML = result;
-            line.className = `console-line ${type}`;
+            line.className = `py-0.5 ${type}`;
             console.appendChild(line);
             console.scrollTop = console.scrollHeight;
         }
 
         function getResult() {
-            const consoleLines = document.querySelectorAll(".console-line");
+            const consoleLines = document.querySelectorAll("#console > div");
             const lastLine = consoleLines[consoleLines.length - 1];
 
             if (lastLine) {
                 const text = lastLine.textContent;
                 const match = text.match(/^(\d+)\/(\d+) valid XML files$/);
 
-                console.log("hello c'est moi 2")
-
                 if (match) {
-                    console.log("hello c'est moi 2")
-                validFileCount = parseInt(match[1], 10);
-                totalFileCount = parseInt(match[2], 10);
-                errorFileCount = totalFileCount - validFileCount;
-                updateSummary()
-            } else {
-                console.error("Impossible to get result about process analysis");
+                    validFileCount = parseInt(match[1], 10);
+                    totalFileCount = parseInt(match[2], 10);
+                    errorFileCount = totalFileCount - validFileCount;
+                    updateSummary();
+                } else {
+                    console.error("Impossible to get result about process analysis");
+                }
+            }
         }
-    }}
 
         async function loadPyodideScript() {
             return new Promise((resolve, reject) => {
@@ -230,19 +157,19 @@
             const console = document.getElementById('console');
             
             validateBtn.disabled = true;
-            spinner.classList.add('active');
+            spinner.classList.remove('hidden');
             
             try {
                 await loadPyodideScript();
-                appendToConsole('Pyodide script loaded successfully', 'success-line');
+                appendToConsole('Pyodide script loaded successfully', 'text-green-600');
 
                 const pyodide = await loadPyodide({
                     stdout: (text) => appendToConsole(text)
                 });
-                appendToConsole('Pyodide initialized', 'success-line');
+                appendToConsole('Pyodide initialized', 'text-green-600');
                 
                 await pyodide.loadPackage(['micropip']);
-                appendToConsole('Installing dependencies...', 'info-line');
+                appendToConsole('Installing dependencies...', 'text-blue-600');
                 
                 await pyodide.runPythonAsync(`
                     import micropip
@@ -255,15 +182,15 @@
                     await micropip.install('htrvx')
                 `);
                 
-                appendToConsole('HTRVX and dependencies installed', 'success-line');
+                appendToConsole('HTRVX and dependencies installed', 'text-green-600');
                 validateBtn.disabled = false;
-                spinner.classList.remove('active');
+                spinner.classList.add('hidden');
                 
                 validateBtn.addEventListener('click', async () => {
                     const fileInput = document.getElementById('zipFile');
                     
                     if (!fileInput.files.length) {
-                        appendToConsole('Please upload a ZIP file.', 'error-line');
+                        appendToConsole('Please upload a ZIP file.', 'text-red-600');
                         return;
                     }
                     
@@ -274,9 +201,9 @@
                     updateSummary();
                     
                     validateBtn.disabled = true;
-                    spinner.classList.add('active');
+                    spinner.classList.remove('hidden');
                     console.textContent = '';
-                    appendToConsole('Validating files...', 'info-line');
+                    appendToConsole('Validating files...', 'text-blue-600');
                     
                     try {
                         const file = fileInput.files[0];
@@ -328,18 +255,18 @@
                         
                         totalFileCount = result;
                         getResult();
-                        appendToConsole(`Validation complete: Processed ${result} files`, 'success-line');
+                        appendToConsole(`Validation complete: Processed ${result} files`, 'text-green-600');
                     } catch (error) {
-                        appendToConsole(`Error during validation: ${error.message}`, 'error-line');
+                        appendToConsole(`Error during validation: ${error.message}`, 'text-red-600');
                     } finally {
                         validateBtn.disabled = false;
-                        spinner.classList.remove('active');
+                        spinner.classList.add('hidden');
                     }
                 });
                 
             } catch (error) {
-                appendToConsole(`Failed to initialize: ${error.message}`, 'error-line');
-                spinner.classList.remove('active');
+                appendToConsole(`Failed to initialize: ${error.message}`, 'text-red-600');
+                spinner.classList.add('hidden');
             }
         }
         
