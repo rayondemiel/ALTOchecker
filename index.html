@@ -173,9 +173,6 @@
                 
                 await pyodide.runPythonAsync(`
                     import micropip
-                    print("Installing pip and wheel...") 
-                    await micropip.install('pip')
-                    await micropip.install('wheel')
                     print("Installing lxml...")
                     await micropip.install('lxml')
                     print("Installing htrvx...")
