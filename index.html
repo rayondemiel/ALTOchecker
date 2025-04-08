@@ -173,10 +173,8 @@
                 
                 await pyodide.runPythonAsync(`
                     import micropip
-                    print("Installing lxml...")
-                    await micropip.install('lxml')
                     print("Installing htrvx...")
-                    await micropip.install('htrvx')
+                    await micropip.install('https://files.pythonhosted.org/packages/4f/8c/a669ec0af4363fd9a78276ad3fcdbdcd841c68597a9aa141c929ab3cdc26/htrvx-0.0.19-py2.py3-none-any.whl')
                 `);
                 
                 appendToConsole('HTRVX and dependencies installed', 'text-green-600');
